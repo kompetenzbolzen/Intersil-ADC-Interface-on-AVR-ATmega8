@@ -1,6 +1,6 @@
 
 #ifndef F_CPU
-#define F_CPU 4000000UL
+#define F_CPU 4000000UL //4MHz
 #endif
 
 #include <avr/io.h>
@@ -8,8 +8,9 @@
 
 #define UART_BAUDRATE 9600
 
-#define UBRR_VAL (F_CPU / UART_BAUDRATE * 16) - 1
+//#define UBRR_VAL (F_CPU / UART_BAUDRATE * 16) - 1
 
+//Locations of ADC Outups (ICL
 #define b1 PC0
 #define b2 PC1
 #define b3 PC2
@@ -58,8 +59,8 @@ void UART_Init();
 
 void UART_Handle();
 /*
-* should be called on Interrupt of UART
 * Handles UART Communication
+* Not Implemented
 */
 
 void UART_Send(char *_cSend);
@@ -80,7 +81,7 @@ int main(void)
 		in[i] = 0;
 	}
 	
-	
+	//Init Status vars
 	char temp = 0;
 	in_cntr = 0;
 	
@@ -88,7 +89,7 @@ int main(void)
 	UART_RX_END = 0;
 	UART_isInit = 0;
 	
-	//Set DDRD as Input
+	//Set Inputs
 	DDRD = 0;
 	DDRC = 0;
 	
@@ -137,7 +138,7 @@ int main(void)
 		
 		UART_Send(out);
 		//Handle UART
-		//UART_Handle();
+		//UART_Handle(); //Not Used
 		
 		//Reset Buffer
 		for(int i = 0; i < 5;i++)
@@ -157,7 +158,7 @@ void UART_Init()
 	if(UART_isInit == 0)
 	{
 		//Calculate Value for Register
-		uint16_t baudrate = (4000000 / (9600 * 16)) - 1;
+		uint16_t baudrate = (F_CPU / (UART_BAUDRATE * 16)) - 1;
 		
 		//Set Baudrate
 		UBRRL = baudrate;
@@ -177,7 +178,8 @@ void UART_Handle()
 {
 	if(UART_isInit == 1)
 	{
-		
+		//Not Used
+		//char in[16] is UART InputBuffer
 	}
 }//UART_Handle
 
@@ -188,7 +190,7 @@ void UART_Send(char *_cSend)
 		while(*_cSend)
 		{
 			while (!(UCSRA & (1<<UDRE)));
-			UDR = _cSend;
+			UDR = *_cSend;
 			_cSend++;
 		}
 	}
