@@ -3,17 +3,11 @@
 * Designed for the Keithley 179 True RMS Multimeter
 */
 
-
-//#ifndef F_CPU
 #define F_CPU 4000000UL //4MHz
-//#endif
+#define USART_UART_BAUDRATE 9600
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-
-#define UART_BAUDRATE 960
-
-#define baudrate ((F_CPU / UART_BAUDRATE * 16) - 1)
 
 //Locations of ADC Outups (ICL71c03)
 #define b1 PC0
@@ -109,8 +103,8 @@ int main(void)
 	
 	//INIT UART Interface
 	UART_Init();
-	//UART_Send("Hello World!");
-	UART_Putc('A');
+	
+	UART_Send("Hello World!");
 	//main loop
 	while(1)
 	{
@@ -148,7 +142,7 @@ int main(void)
 		
 		UART_Send(out);
 		//Handle UART
-		//UART_Handle(); //Not Used
+		UART_Handle();
 		
 		//Reset Buffer
 		for(int i = 0; i < 5;i++)
@@ -165,12 +159,10 @@ void UART_Init()
 {
 	if(UART_isInit == 0)
 	{
-		//Calculate Value for Register
-		//uint16_t baudrate = (F_CPU / (UART_BAUDRATE * 16)) - 1;
+		uint16_t baudrate = (((F_CPU / (USART_UART_BAUDRATE * 16UL))) - 1);
 		
-		//Set Baudrate
-		UBRRL = baudrate;
 		UBRRH = (baudrate >> 8);
+		UBRRL = (baudrate & 0xFF);
 		
 		UCSRB |= (1<<RXEN) | (1<<TXEN); //Enable Reciever and Transmitter
 		UCSRB |= (1<<RXCIE); //Enable Recieve Complete Interrupt
@@ -188,6 +180,7 @@ void UART_Handle()
 	{
 		//Not Used
 		//char in[16] is UART InputBuffer
+		//
 	}
 }//UART_Handle
 
@@ -197,8 +190,6 @@ void UART_Send(char *_cSend)
 	{
 		while(*_cSend)
 		{
-			/*while (!(UCSRA & (1<<UDRE)));
-			UDR = *_cSend;*/
 			UART_Putc(*_cSend);
 			_cSend++;
 		}
