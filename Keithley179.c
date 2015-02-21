@@ -1,16 +1,21 @@
+/*
+* Interface for ICL71c03 ADC 
+* Designed for the Keithley 179 True RMS Multimeter
+*/
 
-#ifndef F_CPU
+
+//#ifndef F_CPU
 #define F_CPU 4000000UL //4MHz
-#endif
+//#endif
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#define UART_BAUDRATE 9600
+#define UART_BAUDRATE 960
 
-//#define UBRR_VAL (F_CPU / UART_BAUDRATE * 16) - 1
+#define baudrate ((F_CPU / UART_BAUDRATE * 16) - 1)
 
-//Locations of ADC Outups (ICL
+//Locations of ADC Outups (ICL71c03)
 #define b1 PC0
 #define b2 PC1
 #define b3 PC2
@@ -34,12 +39,13 @@ char out[5]; //Buffer for ADC Input
 char in[16]; //UART Input Buffer
 uint8_t in_cntr; //Counter for UART Input Buffer
 
+//UART Rcieve Interrupt
 ISR(USART_RXC_vect)
 {
 	cli();
 	in[in_cntr] = UDR;
 	if(in[in_cntr] == '\n')
-	UART_RX_END = 1; //Set RX End Flag
+		UART_RX_END = 1; //Set RX End Flag
 	
 	//Check if Buffer is full
 	if(in_cntr < 15)
@@ -52,6 +58,7 @@ ISR(USART_RXC_vect)
 	sei();
 }//USART_RXC_vect
 
+//Prototypen
 void UART_Init();
 /*
 *Initializes the  UART Interface
@@ -68,6 +75,9 @@ void UART_Send(char *_cSend);
 *Sends String over UART
 */
 
+void UART_Putc(unsigned char c);
+
+//Startpoint
 int main(void)
 {
 	//clear Buffers
@@ -99,8 +109,8 @@ int main(void)
 	
 	//INIT UART Interface
 	UART_Init();
-	UART_Send("Hello World!");
-	
+	//UART_Send("Hello World!");
+	UART_Putc('A');
 	//main loop
 	while(1)
 	{
@@ -151,14 +161,12 @@ int main(void)
 	return 0;
 }//main
 
-
-
 void UART_Init()
 {
 	if(UART_isInit == 0)
 	{
 		//Calculate Value for Register
-		uint16_t baudrate = (F_CPU / (UART_BAUDRATE * 16)) - 1;
+		//uint16_t baudrate = (F_CPU / (UART_BAUDRATE * 16)) - 1;
 		
 		//Set Baudrate
 		UBRRL = baudrate;
@@ -176,7 +184,7 @@ void UART_Init()
 
 void UART_Handle()
 {
-	if(UART_isInit == 1)
+	if(UART_isInit == 1 && UART_RX_END == 1)
 	{
 		//Not Used
 		//char in[16] is UART InputBuffer
@@ -189,9 +197,16 @@ void UART_Send(char *_cSend)
 	{
 		while(*_cSend)
 		{
-			while (!(UCSRA & (1<<UDRE)));
-			UDR = *_cSend;
+			/*while (!(UCSRA & (1<<UDRE)));
+			UDR = *_cSend;*/
+			UART_Putc(*_cSend);
 			_cSend++;
 		}
 	}
 }//UART_send
+
+void UART_Putc(unsigned char c)
+{
+	while (!(UCSRA & (1<<UDRE)));
+	UDR = c;
+}
